@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔊 TTS 语音合成</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 16px;
+            resize: vertical;
+        }
+        
+        textarea::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        
+        select, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        select option {
+            background: #764ba2;
+            color: #fff;
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .player {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            display: none;
+        }
+        
+        .player.show {
+            display: block;
+        }
+        
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .status.show {
+            display: block;
+        }
+        
+        .status.loading {
+            background: rgba(255,193,7,0.2);
+            border: 1px solid rgba(255,193,7,0.5);
+        }
+        
+        .status.success {
+            background: rgba(76,175,80,0.2);
+            border: 1px solid rgba(76,175,80,0.5);
+        }
+        
+        .status.error {
+            background: rgba(244,67,54,0.2);
+            border: 1px solid rgba(244,67,54,0.5);
+        }
+        
+        .test-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 15px; }
+            .card { padding: 20px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔊 TTS 语音合成</h1>
+            <div class="subtitle">让手机说话！基于 Termux API</div>
+            <button class="test-btn" onclick="testAPI()">🔍 测试 API 连接</button>
+        </header>
+        
+        <div class="card">
+            <div class="form-group">
+                <label>📝 输入文字：</label>
+                <textarea id="textInput" placeholder="请输入要合成的文字...&#10;&#10;例如：&#10;你好，这是一个测试。&#10;今天天气真好！&#10;欢迎使用 TTS 语音合成系统。"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>🎭 选择说话人：</label>
+                <select id="speakerSelect">
+                    {% for speaker in speakers %}
+                    <option value="{{ speaker.id }}">{{ speaker.name }} ({{ speaker.id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="options-grid">
+                <div class="form-group">
+                    <label>⚡ 语速：</label>
+                    <input type="number" id="speedInput" value="1" min="0.5" max="2" step="0.1" placeholder="1.0">
+                </div>
+                
+                <div class="form-group">
+                    <label>🌐 语言：</label>
+                    <input type="text" id="langInput" value="Chinese" placeholder="Chinese/English">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>😊 情感指令 (JSON)：</label>
+                <input type="text" id="instructInput" placeholder='{"情感":"高兴"}' 
+                       style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;">
+            </div>
+            
+            <button class="btn" id="generateBtn" onclick="generateSpeech()">
+                🔊 生成语音
+            </button>
+            
+            <div id="status" class="status"></div>
+            
+            <div id="player" class="player">
+                <h3 style="margin-bottom: 10px;">🎵 播放音频</h3>
+                <p id="audioInfo" style="font-size: 12px; opacity: 0.8; margin-bottom: 10px;"></p>
+                <audio id="audioPlayer" controls autoplay></audio>
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <a id="downloadLink" download style="flex: 1;">
+                        <button class="btn" style="font-size: 14px; padding: 10px;">📥 下载</button>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" style="font-size: 12px; opacity: 0.8;">
+            <h3 style="margin-bottom: 10px;">📖 使用说明</h3>
+            <ol style="padding-left: 20px; line-height: 1.8;">
+                <li>输入要合成的文字</li>
+                <li>选择说话人（音色）</li>
+                <li>调整语速和语言（可选）</li>
+                <li>设置情感指令（可选）</li>
+                <li>点击"生成语音"</li>
+                <li>等待生成完成后播放或下载</li>
+            </ol>
+            
+            <h3 style="margin: 20px 0 10px;">🔧 API 参数说明</h3>
+            <ul style="padding-left: 20px; line-height: 1.8;">
+                <li><code>text</code> - 要合成的文字</li>
+                <li><code>speaker</code> - 说话人 (默认：老男人)</li>
+                <li><code>speed</code> - 语速 (默认：1)</li>
+                <li><code>lang</code> - 语言 (默认：Chinese)</li>
+                <li><code>novasr</code> - 新模型 (0/1)</li>
+                <li><code>instruct</code> - 情感指令 (JSON)</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // 测试 API 连接
+        async function testAPI() {
+            const status = document.getElementById('status');
+            status.className = 'status loading show';
+            status.textContent = '🔍 正在测试 API 连接...';
+            
+            try {
+                const response = await fetch('/api/test');
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.className = 'status success show';
+                    status.textContent = '✅ ' + data.message;
+                } else {
+                    status.className = 'status error show';
+                    status.textContent = '❌ ' + data.message;
+                }
+            } catch (error) {
+                status.className = 'status error show';
+                status.textContent = '❌ 测试失败：' + error.message;
+            }
+        }
+        
+        // 生成语音
+        async function generateSpeech() {
+            const text = document.getElementById('textInput').value.trim();
+            const speaker = document.getElementById('speakerSelect').value;
+            const speed = parseFloat(document.getElementById('speedInput').value) || 1;
+            const lang = document.getElementById('langInput').value || 'Chinese';
+            const novasr = 0;
+            
+            // 解析情感指令
+            let instruct = {};
+            const instructText = document.getElementById('instructInput').value.trim();
+            if (instructText) {
+                try {
+                    instruct = JSON.parse(instructText);
+                } catch (e) {
+                    alert('❌ 情感指令 JSON 格式错误！');
+                    return;
+                }
+            }
+            
+            if (!text) {
+                alert('❌ 请输入文字！');
+                return;
+            }
+            
+            const btn = document.getElementById('generateBtn');
+            const status = document.getElementById('status');
+            const player = document.getElementById('player');
+            
+            // 禁用按钮
+            btn.disabled = true;
+            btn.innerHTML = '⏳ 生成中...';
+            
+            // 显示加载状态
+            status.className = 'status loading show';
+            status.textContent = '🔊 正在生成语音...';
+            player.classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        speaker: speaker,
+                        speed: speed,
+                        lang: lang,
+                        novasr: novasr,
+                        instruct: instruct
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 显示成功状态
+                    status.className = 'status success show';
+                    status.textContent = '✅ 语音生成成功！';
+                    
+                    // 显示播放器
+                    document.getElementById('audioPlayer').src = data.url;
+                    document.getElementById('downloadLink').href = data.url;
+                    document.getElementById('audioInfo').textContent = 
+                        `文字：${data.text} | 说话人：${data.speaker} | 时长：${data.duration.toFixed(2)}秒`;
+                    player.classList.add('show');
+                } else {
+                    status.className = 'status error show';
+                    status.textContent = '❌ 生成失败：' + data.error;
+                }
+            } catch (error) {
+                status.className = 'status error show';
+                status.textContent = '❌ 网络错误：' + error.message;
+            } finally {
+                // 恢复按钮
+                btn.disabled = false;
+                btn.innerHTML = '🔊 生成语音';
+            }
+        }
+        
+        // 快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                generateSpeech();
+            }
+        });
+    </script>
+</body>
+</html>

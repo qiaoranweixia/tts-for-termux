@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔊 Termux TTS - 让手机说话</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 16px;
+            resize: vertical;
+        }
+        
+        textarea::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+        
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: #fff;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            font-size: 16px;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: none;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .status.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .status.loading {
+            background: rgba(255,193,7,0.2);
+            border: 2px solid rgba(255,193,7,0.5);
+        }
+        
+        .status.success {
+            background: rgba(76,175,80,0.2);
+            border: 2px solid rgba(76,175,80,0.5);
+        }
+        
+        .status.error {
+            background: rgba(244,67,54,0.2);
+            border: 2px solid rgba(244,67,54,0.5);
+        }
+        
+        .speaker-wave {
+            text-align: center;
+            font-size: 60px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .speaker-wave.show {
+            display: block;
+            animation: wave 0.5s ease infinite;
+        }
+        
+        @keyframes wave {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        .info-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .quick-text {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .quick-text button {
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .quick-text button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔊 Termux TTS</h1>
+            <div class="subtitle">让手机直接说话！调用 termux-tts-speech</div>
+        </header>
+        
+        <div class="card">
+            <div class="form-group">
+                <label>📝 输入文字：</label>
+                <textarea id="textInput" placeholder="请输入要让手机说的文字...&#10;&#10;例如：&#10;你好，欢迎使用 Termux TTS！&#10;现在我可以说话了！&#10;这是一个测试。"></textarea>
+                
+                <div class="quick-text">
+                    <button onclick="setQuickText('你好，欢迎使用 Termux TTS！')">👋 你好</button>
+                    <button onclick="setQuickText('现在时间是 ' + new Date().toLocaleString())">⏰ 报时</button>
+                    <button onclick="setQuickText('这是一个测试语音合成系统的测试。')">🧪 测试</button>
+                    <button onclick="setQuickText('警告！警告！系统出现异常！')">⚠️ 警告</button>
+                </div>
+            </div>
+            
+            <div class="options-grid">
+                <div class="form-group">
+                    <label>🎭 说话人：</label>
+                    <select id="speakerSelect" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;">
+                        <option value="老男人">老男人（成熟大叔）</option>
+                        <option value="青年女">青年女</option>
+                        <option value="少女">少女</option>
+                        <option value="正太">正太</option>
+                        <option value="老女人">老女人</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>⚡ 语速：</label>
+                    <input type="number" id="speedInput" value="1.0" min="0.5" max="3.0" step="0.1">
+                </div>
+            </div>
+            
+            <div class="options-grid">
+                <div class="form-group">
+                    <label>🌐 语言：</label>
+                    <input type="text" id="langInput" value="Chinese" placeholder="Chinese/English">
+                </div>
+                
+                <div class="form-group">
+                    <label>🆕 新模型：</label>
+                    <select id="novasrInput" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;">
+                        <option value="0">关闭 (0)</option>
+                        <option value="1">开启 (1)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>😊 情感指令 (JSON)：</label>
+                <input type="text" id="instructInput" placeholder='{"情感":"高兴"}' 
+                       style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;">
+                <div class="info-box" style="margin-top: 10px;">
+                    💡 示例：<br>
+                    • <code>{"情感":"高兴"}</code> - 高兴<br>
+                    • <code>{"情感":"悲伤"}</code> - 悲伤<br>
+                    • <code>{"情感":"生气"}</code> - 生气<br>
+                    • <code>{}</code> - 无情感
+                </div>
+            </div>
+            
+            <button class="btn" id="speakBtn" onclick="speak()">
+                🔊 生成并播放（TTS API）
+            </button>
+            
+            <button class="btn btn-secondary" onclick="testTTS()">
+                🔍 测试 Termux TTS
+            </button>
+            
+            <div id="status" class="status"></div>
+            
+            <div id="speakerWave" class="speaker-wave">
+                🔊
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">📖 使用说明</h3>
+            
+            <div class="info-box" style="margin-bottom: 15px;">
+                <strong>⚠️  前置要求：</strong><br>
+                1. 安装 termux-api: <code>pkg install termux-api</code><br>
+                2. 安装 Termux:API App (从 F-Droid 或 Google Play)<br>
+                3. 授予 Termux 必要的权限
+            </div>
+            
+            <ol style="padding-left: 20px; line-height: 2;">
+                <li>输入要播放的文字</li>
+                <li>调整音调和语速（可选）</li>
+                <li>选择 TTS 引擎（可选）</li>
+                <li>点击"🔊 让手机说话"</li>
+                <li>手机会直接播放语音！</li>
+            </ol>
+            
+            <h3 style="margin: 20px 0 10px;">🎛️ 参数说明</h3>
+            <ul style="padding-left: 20px; line-height: 1.8;">
+                <li><code>音调 (pitch)</code> - 声音高低 (0.5-2.0)</li>
+                <li><code>语速 (rate)</code> - 说话速度 (0.5-3.0)</li>
+                <li><code>引擎 (engine)</code> - TTS 引擎包名</li>
+            </ul>
+            
+            <h3 style="margin: 20px 0 10px;">💡 快捷技巧</h3>
+            <ul style="padding-left: 20px; line-height: 1.8;">
+                <li>点击快捷文字快速输入</li>
+                <li>按 <code>Ctrl+Enter</code> 快速播放</li>
+                <li>留空引擎使用系统默认</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // 设置快捷文字
+        function setQuickText(text) {
+            document.getElementById('textInput').value = text;
+        }
+        
+        // 测试 TTS
+        async function testTTS() {
+            const status = document.getElementById('status');
+            const wave = document.getElementById('speakerWave');
+            
+            status.className = 'status loading show';
+            status.textContent = '🔍 正在测试 Termux TTS...';
+            wave.classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/test');
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.className = 'status success show';
+                    status.textContent = '✅ ' + data.message + ' - ' + data.test_text;
+                } else {
+                    status.className = 'status error show';
+                    status.textContent = '❌ ' + data.error + '\n' + (data.help || '');
+                }
+            } catch (error) {
+                status.className = 'status error show';
+                status.textContent = '❌ 测试失败：' + error.message;
+            }
+        }
+        
+        // 让手机说话（使用 TTS API 合成 + termux 播放）
+        async function speak() {
+            const text = document.getElementById('textInput').value.trim();
+            
+            if (!text) {
+                alert('❌ 请输入文字！');
+                return;
+            }
+            
+            // 获取所有参数
+            const speaker = document.getElementById('speakerSelect').value;
+            const speed = parseFloat(document.getElementById('speedInput').value) || 1.0;
+            const lang = document.getElementById('langInput').value || 'Chinese';
+            const novasr = parseInt(document.getElementById('novasrInput').value) || 0;
+            
+            // 解析情感指令
+            let instruct = {};
+            const instructText = document.getElementById('instructInput').value.trim();
+            if (instructText) {
+                try {
+                    instruct = JSON.parse(instructText);
+                } catch (e) {
+                    alert('❌ 情感指令 JSON 格式错误！\n示例：{"情感":"高兴"}');
+                    return;
+                }
+            }
+            
+            const btn = document.getElementById('speakBtn');
+            const status = document.getElementById('status');
+            const wave = document.getElementById('speakerWave');
+            
+            // 禁用按钮
+            btn.disabled = true;
+            btn.innerHTML = '🔊 生成并播放中...';
+            
+            // 显示加载状态
+            status.className = 'status loading show';
+            status.textContent = '📡 正在调用 TTS API 合成音频...';
+            wave.classList.add('show');
+            
+            try {
+                // 调用 /api/tts-play - 先用 TTS API 合成，再用 termux 播放
+                const response = await fetch('/api/tts-play', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        speaker: speaker,
+                        speed: speed,
+                        lang: lang,
+                        novasr: novasr,
+                        instruct: instruct
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.className = 'status success show';
+                    status.textContent = '✅ 播放成功！\n\n📝 文字：' + data.text + '\n🎭 说话人：' + data.speaker + '\n⚡ 语速：' + speed + '\n🌐 语言：' + lang + '\n📊 音频大小：' + (data.audio_size / 1024).toFixed(2) + ' KB';
+                    
+                    // 3 秒后隐藏波形
+                    setTimeout(() => {
+                        wave.classList.remove('show');
+                    }, 3000);
+                } else {
+                    status.className = 'status error show';
+                    status.textContent = '❌ ' + data.error;
+                    wave.classList.remove('show');
+                }
+            } catch (error) {
+                status.className = 'status error show';
+                status.textContent = '❌ 播放失败：' + error.message;
+                wave.classList.remove('show');
+            } finally {
+                // 恢复按钮
+                btn.disabled = false;
+                btn.innerHTML = '🔊 生成并播放（TTS API）';
+            }
+        }
+        
+        // 快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                speak();
+            }
+        });
+    </script>
+</body>
+</html>

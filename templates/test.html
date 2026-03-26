@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>TTS 测试</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #1a1a2e; color: #fff; }
+        .btn { padding: 15px 30px; font-size: 18px; background: #e94560; color: #fff; border: none; border-radius: 10px; cursor: pointer; }
+        .status { margin-top: 20px; padding: 20px; border-radius: 10px; }
+        .loading { background: rgba(255,193,7,0.2); border: 2px solid #ffc107; }
+        .success { background: rgba(76,175,80,0.2); border: 2px solid #4caf50; }
+        .error { background: rgba(244,67,54,0.2); border: 2px solid #f44336; }
+    </style>
+</head>
+<body>
+    <h1>🔊 TTS 测试</h1>
+    
+    <textarea id="text" placeholder="输入文字..." style="width:100%;height:100px;padding:10px;border-radius:10px;border:1px solid #fff;background:rgba(255,255,255,0.1);color:#fff;font-size:16px;">你好，这是一个完整的测试语音，希望能听到完整的声音。</textarea>
+    
+    <br><br>
+    
+    <button class="btn" onclick="test()">🔊 测试播放</button>
+    
+    <div id="status" class="status" style="display:none;"></div>
+    
+    <script>
+        async function test() {
+            const text = document.getElementById('text').value.trim();
+            const status = document.getElementById('status');
+            const btn = document.querySelector('.btn');
+            
+            if (!text) {
+                alert('请输入文字');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '🔊 生成并播放中...';
+            
+            status.style.display = 'block';
+            status.className = 'status loading';
+            status.textContent = '📡 正在调用 TTS API...';
+            
+            try {
+                const response = await fetch('/api/tts-play', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        text: text,
+                        speaker: '老男人',
+                        speed: 1,
+                        lang: 'Chinese',
+                        novasr: 0,
+                        instruct: {}
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.className = 'status success';
+                    status.textContent = '✅ ' + data.message + '\n\n📝 文字：' + data.text + '\n🎭 说话人：' + data.speaker + '\n📊 大小：' + (data.audio_size / 1024).toFixed(1) + ' KB\n⏱️ 时长：' + data.duration;
+                } else {
+                    status.className = 'status error';
+                    status.textContent = '❌ ' + data.error;
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = '❌ 错误：' + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔊 测试播放';
+            }
+        }
+    </script>
+</body>
+</html>

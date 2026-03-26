@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.wav
+*.mp3
+
+# 配置文件（如果有敏感信息）
+.env
+config.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
