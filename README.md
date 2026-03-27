@@ -65,7 +65,29 @@ cp llama-cli ~/.local/bin/
 
 ## 使用方法
 
-### 🤖 完整语音助手（Whisper + Llama + TTS）- 推荐
+### 🤖 Ollama 语音助手（推荐）
+
+```bash
+# 启动 Ollama 语音助手
+python3 voice_ollama.py
+
+# 访问 http://localhost:5015
+```
+
+**完整流程：**
+1. 🎤 **按住说话** → 录音
+2. 🧠 **Whisper 识别** → 文字
+3. 💭 **Ollama AI 思考** → 智能回复
+4. 🔊 **TTS 朗读** → 语音播放
+
+**配置 Ollama：**
+编辑 `voice_ollama.py` 中的：
+```python
+OLLAMA_API = "http://localhost:11434"  # Ollama 地址
+OLLAMA_MODEL = "qwen2.5:0.5b"  # 模型名称
+```
+
+### 🤖 完整语音助手（Whisper + Llama + TTS）
 
 ```bash
 # 启动完整语音助手
@@ -73,19 +95,6 @@ python3 voice_llama.py
 
 # 访问 http://localhost:5014
 ```
-
-**完整流程：**
-1. 🎤 **按住说话** → 录音
-2. 🧠 **Whisper 识别** → 文字
-3. 💭 **Llama 思考** → AI 回复
-4. 🔊 **TTS 朗读** → 语音播放
-
-**功能：**
-- 🎙️ 语音识别（Whisper）
-- 🤖 AI 对话（Llama）
-- 🔊 语音合成（TTS）
-- ⚙️ 多说话人、语速调节
-- 💬 文字输入备用
 
 ### 🎙️ 语音聊天助手（简化版 - 推荐）
 
@@ -147,7 +156,8 @@ mpv "http://192.168.0.104:9880/?text=你好&speaker=Keira" --no-video --volume=1
 
 | 文件 | 说明 | 端口 |
 |------|------|------|
-| `voice_llama.py` | 🆕 **完整语音助手** (Whisper+Llama+TTS) | 5014 |
+| `voice_ollama.py` | 🆕 **Ollama 语音助手** (Whisper+Ollama+TTS) | 5015 |
+| `voice_llama.py` | 完整语音助手 (Whisper+Llama+TTS) | 5014 |
 | `voice_chat_simple.py` | 语音聊天（简化版） | 5013 |
 | `voice_chat.py` | 语音聊天（完整版+Whisper） | 5013 |
 | `advanced_tts.py` | 完整 TTS Web | 5012 |
