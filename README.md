@@ -1,30 +1,83 @@
 # TTS for Termux 🔊
 
-在 Termux 中使用 TTS（文字转语音）API 播放音频。
+在 Termux 中使用 TTS（文字转语音）+ Whisper STT（语音识别）的语音交互系统。
 
 ## 功能特性
 
-- ✅ 流式下载 TTS 音频
-- ✅ mpv 播放器支持
-- ✅ 音量调节 (0.1-2.0)
-- ✅ 语速调节 (0.5-2.0)
-- ✅ 播放控制（播放/暂停/继续/停止）
-- ✅ 多说话人选择（Keira、老男人、青年女、少女）
-- ✅ Web 界面
+- ✅ **Whisper 本地语音识别**（STT）
+- ✅ **流式下载 TTS 音频**
+- ✅ **mpv 播放器支持**
+- ✅ **音量调节** (0.1-2.0)
+- ✅ **语速调节** (0.5-2.0)
+- ✅ **播放控制**（播放/暂停/继续/停止）
+- ✅ **多说话人选择**（Keira、老男人、青年女、少女）
+- ✅ **Web 界面**
+- ✅ **语音聊天模式**（录音→识别→回复→朗读）
 
 ## 安装依赖
 
-```bash
-# 安装系统依赖
-pkg install mpv sox termux-api -y
+### 1. 系统依赖
 
-# 安装 Python 依赖
-pip install flask requests
+```bash
+# 基础依赖
+pkg install mpv sox termux-api ffmpeg -y
+
+# 语音识别依赖（可选）
+pip install pyaudio webrtcvad
 ```
+
+### 2. Python 依赖
+
+```bash
+pip install flask requests
+
+# Whisper 语音识别（可选，约 39MB+ 模型）
+pip install openai-whisper
+```
+
+### 3. 下载 Whisper 模型（首次运行自动下载）
+
+Whisper 模型大小：
+- `tiny` - 39 MB（推荐，速度快）
+- `base` - 74 MB
+- `small` - 244 MB
+- `medium` - 769 MB
+- `large` - 1.5 GB
 
 ## 使用方法
 
-### Web 界面（推荐）
+### 🎙️ 语音聊天助手（简化版 - 推荐）
+
+```bash
+# 启动语音聊天（无需 Whisper）
+python3 voice_chat_simple.py
+
+# 访问 http://localhost:5013
+```
+
+功能：
+- 💬 文字输入 → AI 回复 → 语音播放
+- ⚙️ 可调节说话人、语速
+- ✅ 无需复杂依赖
+
+### 🎙️ 语音聊天助手（完整版 - 需 Whisper）
+
+```bash
+# 安装 Whisper（可选）
+pip install openai-whisper
+
+# 启动完整版（支持语音识别）
+python3 voice_chat.py
+
+# 访问 http://localhost:5013
+```
+
+功能：
+- 🎤 点击录音 → 说话 → 自动识别（Whisper）
+- 💬 文字输入 → AI 回复 → 语音播放
+- ⚙️ 可调节说话人、语速
+
+### Web 界面（TTS 播放）
 
 ```bash
 # 启动完整版本（支持音量、语速、播放控制）
@@ -51,12 +104,16 @@ mpv "http://192.168.0.104:9880/?text=你好&speaker=Keira" --no-video --volume=1
 
 ## 项目文件
 
-| 文件 | 说明 |
-|------|------|
-| `advanced_tts.py` | 完整功能 Web 版本（5012 端口） |
-| `mpv_web.py` | mpv 基础 Web 版本（5011 端口） |
-| `simple_speak.py` | 简单命令行播放脚本 |
-| `stream_tts.py` | 流式下载测试脚本 |
+| 文件 | 说明 | 端口 |
+|------|------|------|
+| `voice_chat.py` | 🆕 语音聊天助手（Whisper+TTS） | 5013 |
+| `advanced_tts.py` | 完整功能 Web 版本 | 5012 |
+| `mpv_web.py` | mpv 基础 Web 版本 | 5011 |
+| `tts_web.py` | TTS Web 界面 | - |
+| `app_termux.py` | Termux 专用版本 | - |
+| `robust_tts.py` | 稳定版本 | - |
+| `stream_tts.py` | 流式下载测试 | - |
+| `simple_speak.py` | 简单命令行播放 | - |
 
 ## API 接口
 
