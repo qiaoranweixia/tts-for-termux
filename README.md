@@ -44,7 +44,48 @@ Whisper 模型大小：
 - `medium` - 769 MB
 - `large` - 1.5 GB
 
+### 4. 下载 Llama 模型（用于 AI 回复）
+
+```bash
+mkdir -p ~/.llama/models
+cd ~/.llama/models
+
+# Qwen2.5 0.5B 量化版（推荐，约 400MB）
+wget https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf
+```
+
+### 5. 安装 llama.cpp
+
+```bash
+git clone https://github.com/ggerganov/llama.cpp
+cd llama.cpp
+make -j4
+cp llama-cli ~/.local/bin/
+```
+
 ## 使用方法
+
+### 🤖 完整语音助手（Whisper + Llama + TTS）- 推荐
+
+```bash
+# 启动完整语音助手
+python3 voice_llama.py
+
+# 访问 http://localhost:5014
+```
+
+**完整流程：**
+1. 🎤 **按住说话** → 录音
+2. 🧠 **Whisper 识别** → 文字
+3. 💭 **Llama 思考** → AI 回复
+4. 🔊 **TTS 朗读** → 语音播放
+
+**功能：**
+- 🎙️ 语音识别（Whisper）
+- 🤖 AI 对话（Llama）
+- 🔊 语音合成（TTS）
+- ⚙️ 多说话人、语速调节
+- 💬 文字输入备用
 
 ### 🎙️ 语音聊天助手（简化版 - 推荐）
 
@@ -106,9 +147,11 @@ mpv "http://192.168.0.104:9880/?text=你好&speaker=Keira" --no-video --volume=1
 
 | 文件 | 说明 | 端口 |
 |------|------|------|
-| `voice_chat.py` | 🆕 语音聊天助手（Whisper+TTS） | 5013 |
-| `advanced_tts.py` | 完整功能 Web 版本 | 5012 |
-| `mpv_web.py` | mpv 基础 Web 版本 | 5011 |
+| `voice_llama.py` | 🆕 **完整语音助手** (Whisper+Llama+TTS) | 5014 |
+| `voice_chat_simple.py` | 语音聊天（简化版） | 5013 |
+| `voice_chat.py` | 语音聊天（完整版+Whisper） | 5013 |
+| `advanced_tts.py` | 完整 TTS Web | 5012 |
+| `mpv_web.py` | mpv TTS Web | 5011 |
 | `tts_web.py` | TTS Web 界面 | - |
 | `app_termux.py` | Termux 专用版本 | - |
 | `robust_tts.py` | 稳定版本 | - |
